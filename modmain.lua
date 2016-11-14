@@ -20,4 +20,5 @@ hunger_games.fancy_option = GetModConfigData("fancy_option")
 
 ----- Veränderte Spieldateien --------------------------------------------------
 AddPrefabPostInit("multiplayer_portal", require("mod/multiplayer_portal"))
-AddPrefabPostInit("wilson", require("mod/player_common"))
+AddPlayerPostInit(require("mod/player_common"))
+AddComponentPostInit("playercontroller", require("mod/playercontroller"))
