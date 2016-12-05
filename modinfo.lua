@@ -1,16 +1,16 @@
 name = "Hunger Games"
 description = "A last man standing survival mode."
+priority = 100
 
 author = "dont-starve-mods"
 version = "1.0"
-
-forumthread = ""
-
+version_compatible = "1.0"
 api_version = 10
 
 icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
+standalone = true
 all_clients_require_mod = true
 client_only_mod = false
 dst_compatible = true
