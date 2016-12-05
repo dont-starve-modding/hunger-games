@@ -55,6 +55,7 @@ end)
 
 --- Verhalten der Charaktere
 AddPlayerPostInit(function(inst)
+    --- Figur bleibt beim Ausloggen bestehen
     inst.OnDespawn = function(inst)
         if inst.components.playercontroller ~= nil then
             inst.components.playercontroller:Enable(false)
@@ -62,16 +63,43 @@ AddPlayerPostInit(function(inst)
         inst.components.locomotor:StopMoving()
         inst.components.locomotor:Clear()
     end
-end)
-
---- Kontrolle über Bewegung
-AddComponentPostInit("playercontroller", function(inst)
-    local _speed = inst.locomotor.runspeed
-    inst.locomotor.runspeed = 0
+    -- Den Spieler vor Beginn einfrieren
+    inst.components.health:SetInvincible(true)
+    inst.components.hunger:Pause()
+    local _speed = inst.components.locomotor.runspeed
+    inst.components.locomotor.runspeed = 0
     table.insert(on_begin, function()
-        inst.locomotor.runspeed = _speed
+        inst.components.health:SetInvincible(false)
+        inst.components.hunger:Resume()
+        inst.components.locomotor.runspeed = _speed
 	end)
+    -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
     if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() then
         DoTaskInTime(0, BeginGame)
     end
+end)
+
+--- Den Spieler vor Beginn einfrieren
+--AddComponentPostInit("playercontroller", function(inst)
+--    inst.hunger:Pause()
+--    local _speed = inst.locomotor.runspeed
+--    inst.locomotor.runspeed = 0
+--    table.insert(on_begin, function()
+--        inst.locomotor.runspeed = _speed
+--        inst.hunger:Resume()
+--	end)
+--    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() then
+--        DoTaskInTime(0, BeginGame)
+--    end
+--end)
+
+--- Zeit vor Beginn anhalten
+AddComponentPostInit("clock", function(inst)
+    local _OnUpdate = inst.OnUpdate
+    inst.OnUpdate = nil
+    inst.LongUpdate = nil
+    table.insert(on_begin, function()
+        inst.OnUpdate = _OnUpdate
+        inst.LongUpdate = _OnUpdate
+    end)
 end)
