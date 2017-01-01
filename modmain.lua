@@ -2,28 +2,28 @@
 ----- Hunger Games -----
 ------------------------
 
-local require = GLOBAL.require
 local tonumber = GLOBAL.tonumber
 local TheNet = GLOBAL.TheNet
+local SpawnPrefab = GLOBAL.SpawnPrefab
 local function DoTaskInTime(time, task) GLOBAL.TheWorld:DoTaskInTime(time, task) end
 local hunger_games = GLOBAL.GAME_MODES["hunger_games"]
+
+local debug = true
 
 
 ----- Optionen -----------------------------------------------------------------
 
 --- Unveränderlich
-hunger_games.portal_rez = false
-hunger_games.invalid_recipes = { "reviver", "lifeinjector", "amulet", "resurrections" }
+hunger_games.resource_renewal = false
 hunger_games.ghost_sanity_drain = false
+hunger_games.portal_rez = false
+hunger_games.reset_time = nil
+hunger_games.invalid_recipes = { "lifeinjector", "resurrectionstatue", "reviver" }
 
 --- Einstellungen
 hunger_games.waiting_time = GetModConfigData("waiting_time")
+hunger_games.ghost_enabled = GetModConfigData("ghost_enabled")
 hunger_games.fancy_option = GetModConfigData("fancy_option")
-
-
------ Anpassungen --------------------------------------------------------------
-
-require("tuning")(GLOBAL.TUNING)
 
 
 ----- Allgemein ----------------------------------------------------------------
@@ -52,10 +52,17 @@ end
 
 --- Startumgebung mit Füllhorn
 AddPrefabPostInit("multiplayer_portal", function(inst)
-    local x,y,z = inst:GetPosition():Get()
-    -- TODO Voraussetzung ist genügend freier Raum, i.A. aber nicht der Fall
-    -- TODO Gegenstände verteilen
-    -- SpawnPrefab("firepit").Transform:SetPosition(x,y,z)
+	DoTaskInTime(0, function()
+	    local x,y,z = inst:GetPosition():Get()
+	    -- TODO Voraussetzung ist genügend freier Raum, i.A. aber nicht der Fall
+		-- Halbkreis vor dem Füllhorn
+		local delta = math.pi / TheNet:GetServerMaxPlayers()
+		for phi = delta, math.pi, delta do
+	    	SpawnPrefab("firepit").Transform:SetPosition(
+				x+15*math.cos(phi), y, z+15*math.sin(phi)
+			)
+		end
+	end)
 end)
 
 
@@ -82,7 +89,7 @@ AddPlayerPostInit(function(inst)
 	end)
 
     -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
-    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() then
+    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or debug then
         DoTaskInTime(0, BeginGame)
     end
 end)
@@ -100,9 +107,13 @@ AddComponentPostInit("clock", function(inst)
 end)
 
 
+-- TODO was ist das hier nochmal?
 -- Keine Spielerindikatoren
-AddComponentPostInit("playertargetindicator", function(inst)
-    inst:RemoveEventCallback("playerexited", inst.onplayerexited, GLOBAL.TheWorld)
+--AddComponentPostInit("playertargetindicator", function(inst)
+    --inst:RemoveEventCallback("playerexited", inst.onplayerexited, GLOBAL.TheWorld)
     -- oder: inst.OnPlayerExited = function(self, player) end
-    inst.OnUpdate = function() end
-end)
+    --inst.OnUpdate = function() end
+--end)
+
+
+----- Kalkstein -----

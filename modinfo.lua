@@ -1,5 +1,6 @@
 name = "Hunger Games"
 description = "A last man standing survival mode."
+forumthread = ""
 priority = 100
 
 author = "dont-starve-mods"
@@ -13,6 +14,8 @@ icon = "modicon.tex"
 standalone = true
 all_clients_require_mod = true
 client_only_mod = false
+dont_starve_compatible = true
+reign_of_giants_compatible = true
 dst_compatible = true
 
 server_filter_tags = { "hunger games", "hunger-games", "hungergames", "pvp", "vs", "versus" }
@@ -64,3 +67,6 @@ configuration_options = {
         default = false
     }
 }
+
+
+----- Kalkstein -----
