@@ -41,10 +41,12 @@ TUNING.SEASON_LENGTH_HARSH_VERYLONG = 20
 
 
 ----- Host-Einstellungen -------------------------------------------------------
-if not GLOBAL.getmetatable(GLOBAL).__declared["WORLDGEN_MAIN"] then
+if GLOBAL.getmetatable(GLOBAL).__declared["GAME_MODES"] then
+--if not GLOBAL.getmetatable(GLOBAL).__declared["WORLDGEN_MAIN"] then
 
 	--- Andere Spielmodi entfernen
-	--GLOBAL.GAME_MODES = { hunger_games=GLOBAL.GAME_MODES["hunger_games"] }
+	-- TODO Absturz:
+	GLOBAL.GAME_MODES = { hunger_games=GLOBAL.GAME_MODES["hunger_games"] }
 
 	--- Anzeige der Einstellungen
 	--AddClassPostConstruct("widgets/serversettingstab", function(inst)

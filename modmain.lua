@@ -8,7 +8,7 @@ local SpawnPrefab = GLOBAL.SpawnPrefab
 local function DoTaskInTime(time, task) GLOBAL.TheWorld:DoTaskInTime(time, task) end
 local hunger_games = GLOBAL.GAME_MODES["hunger_games"]
 
-local debug = true
+local DEBUG = true -- TODO
 
 
 ----- Optionen -----------------------------------------------------------------
@@ -48,19 +48,25 @@ local function EndGame()
 end
 
 
+--- Positionen der Startplattformen
+local platform_position = { }
+
+
 ----- Veränderte Spieldateien --------------------------------------------------
 
 --- Startumgebung mit Füllhorn
 AddPrefabPostInit("multiplayer_portal", function(inst)
 	DoTaskInTime(0, function()
-	    local x,y,z = inst:GetPosition():Get()
+	    local x0,y,z0 = inst:GetPosition():Get()
 	    -- TODO Voraussetzung ist genügend freier Raum, i.A. aber nicht der Fall
 		-- Halbkreis vor dem Füllhorn
+		local r = 15
 		local delta = math.pi / TheNet:GetServerMaxPlayers()
 		for phi = delta, math.pi, delta do
-	    	SpawnPrefab("firepit").Transform:SetPosition(
-				x+15*math.cos(phi), y, z+15*math.sin(phi)
-			)
+			local x = x0 + r * math.cos(phi)
+			local z = z0 + r * math.sin(phi)
+			table.insert(platform_position, {x,y,z})
+	    	SpawnPrefab("flower").Transform:SetPosition(x,y,z)
 		end
 	end)
 end)
@@ -77,6 +83,9 @@ AddPlayerPostInit(function(inst)
         inst.components.locomotor:Clear()
     end
 
+	-- Keine Spielerindikatoren
+	inst:AddTag("noplayerindicator")
+
     -- Den Spieler vor Beginn einfrieren
     inst.components.health:SetInvincible(true)
     inst.components.hunger:Pause()
@@ -89,9 +98,17 @@ AddPlayerPostInit(function(inst)
 	end)
 
     -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
-    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or debug then
+    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or DEBUG then
         DoTaskInTime(0, BeginGame)
     end
+end)
+
+
+--- Charaktere auf den Startplattformen absetzen
+AddComponentPostInit("playerspawner", function(inst)
+	inst.GetNextSpawnPosition = function()
+		return table.remove(platform_position)
+	end
 end)
 
 
@@ -105,15 +122,6 @@ AddComponentPostInit("clock", function(inst)
         inst.LongUpdate = _OnUpdate
     end)
 end)
-
-
--- TODO was ist das hier nochmal?
--- Keine Spielerindikatoren
---AddComponentPostInit("playertargetindicator", function(inst)
-    --inst:RemoveEventCallback("playerexited", inst.onplayerexited, GLOBAL.TheWorld)
-    -- oder: inst.OnPlayerExited = function(self, player) end
-    --inst.OnUpdate = function() end
---end)
 
 
 ----- Kalkstein -----
