@@ -47,26 +47,32 @@ local function EndGame()
     TheNet:Announce("The game is over!")
 end
 
-
 --- Positionen der Startplattformen
-local platform_position = { }
+local PlatformPosition = nil
 
+--- Listet für alle Startpositionen auf, ob sie von einem Spieler besetzt sind
+local platform_used = { }
 
 ----- Veränderte Spieldateien --------------------------------------------------
 
 --- Startumgebung mit Füllhorn
 AddPrefabPostInit("multiplayer_portal", function(inst)
 	DoTaskInTime(0, function()
-	    local x0,y,z0 = inst:GetPosition():Get()
+	    local x0, y, z0 = inst:GetPosition():Get()
 	    -- TODO Voraussetzung ist genügend freier Raum, i.A. aber nicht der Fall
 		-- Halbkreis vor dem Füllhorn
 		local r = 15
 		local delta = math.pi / TheNet:GetServerMaxPlayers()
-		for phi = delta, math.pi, delta do
-			local x = x0 + r * math.cos(phi)
-			local z = z0 + r * math.sin(phi)
-			table.insert(platform_position, {x,y,z})
-	    	SpawnPrefab("flower").Transform:SetPosition(x,y,z)
+		PlatformPosition = function(i)
+			local phi = i * delta
+			local x = x0 + r * math.sin(phi)
+			local z = z0 + r * math.cos(phi)
+			return x, y, z
+		end
+		for i = 1, TheNet:GetServerMaxPlayers() do
+			platform_used[i] = false
+			local x, y, z = PlatformPosition(i)
+	    	SpawnPrefab("compass").Transform:SetPosition(x, y, z)
 		end
 	end)
 end)
@@ -106,8 +112,14 @@ end)
 
 --- Charaktere auf den Startplattformen absetzen
 AddComponentPostInit("playerspawner", function(inst)
-	inst.GetNextSpawnPosition = function()
-		return table.remove(platform_position)
+	inst.SpawnAtNextLocation = function(self, inst, player)
+		local i = 1
+		while platform_used[i] do
+			i = i + 1
+		end
+		platform_used[i] = true
+		local x, y, z = PlatformPosition(i)
+		self:SpawnAtLocation(inst, player, x, y, z)
 	end
 end)
 

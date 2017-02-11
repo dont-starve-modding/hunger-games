@@ -46,7 +46,7 @@ if GLOBAL.getmetatable(GLOBAL).__declared["GAME_MODES"] then
 
 	--- Andere Spielmodi entfernen
 	-- TODO Absturz:
-	GLOBAL.GAME_MODES = { hunger_games=GLOBAL.GAME_MODES["hunger_games"] }
+	--GLOBAL.GAME_MODES = { hunger_games=GLOBAL.GAME_MODES["hunger_games"] }
 
 	--- Anzeige der Einstellungen
 	--AddClassPostConstruct("widgets/serversettingstab", function(inst)
