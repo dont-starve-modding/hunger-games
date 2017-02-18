@@ -53,6 +53,7 @@ local PlatformPosition = nil
 --- Listet für alle Startpositionen auf, ob sie von einem Spieler besetzt sind
 local platform_used = { }
 
+
 ----- Veränderte Spieldateien --------------------------------------------------
 
 --- Startumgebung mit Füllhorn
@@ -103,6 +104,9 @@ AddPlayerPostInit(function(inst)
         inst.components.locomotor.runspeed = _speed
 	end)
 
+	-- Verstecken ermöglichen
+	inst:AddComponent("hideaway")
+
     -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
     if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or DEBUG then
         DoTaskInTime(0, BeginGame)
@@ -135,5 +139,83 @@ AddComponentPostInit("clock", function(inst)
     end)
 end)
 
+
+--- Versteckmöglichkeit in Büschen und Bäumen
+-- TODO SCHÖNER
+AddPrefabPostInit("evergreen", function(inst)
+	if GLOBAL.TheWorld.ismastersim then
+		inst:AddComponent("hideaway")
+	end
+end)
+AddAction("HIDE", "Hide", function(act)
+	if act.doer ~= nil and act.target ~= nil and act.doer:HasTag("player")
+	and act.target.components.hideaway and act.target:HasTag("tree")
+	and not act.target:HasTag("burnt") and not act.target:HasTag("fire")
+	and not act.target:HasTag("stump") then
+		act.target.components.hideaway:Hide(act.doer)
+		return true
+	else
+		return false
+	end
+end)
+AddComponentAction("SCENE", "hideaway", function(inst, doer, actions, right)
+	if right and not inst:HasTag("burnt") and not inst:HasTag("fire") and (
+		   inst:HasTag("tree") and not inst:HasTag("stump")
+		-- or inst:HasTag("berrybush")
+	) then
+		table.insert(actions, GLOBAL.ACTIONS.HIDE)
+	end
+end)
+AddStategraphState("wilson", GLOBAL.State{ name = "hide",
+	tags = { "hiding", "notarget", "nomorph", "busy", "nopredict" },
+
+	onenter = function(inst)
+		inst.components.locomotor:Stop()
+		inst.SoundEmitter:PlaySound("dontstarve/movement/foley/hidebush")
+		inst.sg.statemem.action = inst.bufferedaction
+		inst.sg:SetTimeout(20)
+		if not GLOBAL.TheWorld.ismastersim then
+			inst:PerformPreviewBufferedAction()
+		end
+	end,
+
+	timeline = {
+		GLOBAL.TimeEvent(6 * GLOBAL.FRAMES, function(inst)
+			if GLOBAL.TheWorld.ismastersim then
+				inst:PerformBufferedAction()
+			end
+			inst:Hide()
+			inst.DynamicShadow:Enable(false)
+			inst.sg:RemoveStateTag("busy")
+		end),
+		GLOBAL.TimeEvent(24 * GLOBAL.FRAMES, function(inst)
+			inst.sg:RemoveStateTag("nopredict")
+			inst.sg:AddStateTag("idle")
+		end),
+	},
+
+	onexit = function(inst)
+        inst:Show()
+		inst.DynamicShadow:Enable(true)
+        inst.AnimState:PlayAnimation("run_pst")
+		inst.SoundEmitter:PlaySound("dontstarve/movement/foley/hidebush")
+		if inst.bufferedaction == inst.sg.statemem.action then
+			inst:ClearBufferedAction()
+		end
+		inst.sg.statemem.action = nil
+	end,
+
+	ontimeout = function(inst)
+        inst:Show()
+		inst.DynamicShadow:Enable(true)
+        inst.AnimState:PlayAnimation("run_pst")
+		inst.SoundEmitter:PlaySound("dontstarve/movement/foley/hidebush")
+		if not GLOBAL.TheWorld.ismastersim then
+			inst:ClearBufferedAction()
+		end
+		inst.sg:GoToState("idle")
+	end,
+})
+AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.HIDE, "hide"))
 
 ----- Kalkstein -----
