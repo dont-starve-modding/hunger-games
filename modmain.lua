@@ -142,14 +142,16 @@ end)
 
 --- Versteckmöglichkeit in Büschen und Bäumen
 -- TODO SCHÖNER
-AddPrefabPostInit("evergreen", function(inst)
-	if GLOBAL.TheWorld.ismastersim then
-		inst:AddComponent("hideaway")
-	end
-end)
+for index, prefab in pairs({"evergreen", "twiggytree", "berrybush"}) do
+	AddPrefabPostInit(prefab, function(inst)
+		if GLOBAL.TheWorld.ismastersim then
+			inst:AddComponent("hideaway")
+		end
+	end)
+end
 AddAction("HIDE", "Hide", function(act)
 	if act.doer ~= nil and act.target ~= nil and act.doer:HasTag("player")
-	and act.target.components.hideaway and act.target:HasTag("tree")
+	and act.target.components.hideaway --and act.target:HasTag("tree")
 	and not act.target:HasTag("burnt") and not act.target:HasTag("fire")
 	and not act.target:HasTag("stump") then
 		act.target.components.hideaway:Hide(act.doer)
@@ -161,7 +163,7 @@ end)
 AddComponentAction("SCENE", "hideaway", function(inst, doer, actions, right)
 	if right and not inst:HasTag("burnt") and not inst:HasTag("fire") and (
 		   inst:HasTag("tree") and not inst:HasTag("stump")
-		-- or inst:HasTag("berrybush")
+		   or inst:HasTag("berrybush")
 	) then
 		table.insert(actions, GLOBAL.ACTIONS.HIDE)
 	end
