@@ -8,7 +8,7 @@ local SpawnPrefab = GLOBAL.SpawnPrefab
 local function DoTaskInTime(time, task) GLOBAL.TheWorld:DoTaskInTime(time, task) end
 local hunger_games = GLOBAL.GAME_MODES["hunger_games"]
 
-local DEBUG = true -- TODO
+local DEBUG = false -- TODO
 
 
 ----- Optionen -----------------------------------------------------------------
@@ -107,10 +107,12 @@ AddPlayerPostInit(function(inst)
 	-- Verstecken ermöglichen
 	inst:AddComponent("hideaway")
 
-    -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
-    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or DEBUG then
-        DoTaskInTime(0, BeginGame)
-    end
+	if GLOBAL.TheWorld.ismastersim then
+	    -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
+	    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or DEBUG then
+	        DoTaskInTime(0, BeginGame)
+	    end
+	end
 end)
 
 
