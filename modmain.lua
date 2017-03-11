@@ -6,10 +6,18 @@ local tonumber = GLOBAL.tonumber
 local TheNet = GLOBAL.TheNet
 local SpawnPrefab = GLOBAL.SpawnPrefab
 local function DoTaskInTime(time, task) GLOBAL.TheWorld:DoTaskInTime(time, task) end
+local ismastersim = TheNet:GetIsMasterSimulation()
 local hunger_games = GLOBAL.GAME_MODES["hunger_games"]
 
-local DEBUG = false -- TODO
+local DEBUG = true -- TODO
 
+
+----- Zugehöriges --------------------------------------------------------------
+
+--- Liste der neuen Gegenstände
+PrefabFiles = {
+	"platform"
+}
 
 ----- Optionen -----------------------------------------------------------------
 
@@ -37,7 +45,7 @@ local function BeginGame(t)
     if t <= 0 then
         for index, task in pairs(on_begin) do task() end
     else
-        TheNet:Announce(t)
+        if ismastersim then TheNet:Announce(t) end
         DoTaskInTime(1, function() BeginGame(t-1) end)
     end
 end
@@ -73,7 +81,7 @@ AddPrefabPostInit("multiplayer_portal", function(inst)
 		for i = 1, TheNet:GetServerMaxPlayers() do
 			platform_used[i] = false
 			local x, y, z = PlatformPosition(i)
-	    	SpawnPrefab("compass").Transform:SetPosition(x, y, z)
+	    	SpawnPrefab("platform").Transform:SetPosition(x, y, z)
 		end
 	end)
 end)
@@ -93,26 +101,26 @@ AddPlayerPostInit(function(inst)
 	-- Keine Spielerindikatoren
 	inst:AddTag("noplayerindicator")
 
-    -- Den Spieler vor Beginn einfrieren
-    inst.components.health:SetInvincible(true)
-    inst.components.hunger:Pause()
-    local _speed = inst.components.locomotor.runspeed
-    inst.components.locomotor.runspeed = 0
-    table.insert(on_begin, function()
-        inst.components.health:SetInvincible(false)
-        inst.components.hunger:Resume()
-        inst.components.locomotor.runspeed = _speed
-	end)
+	if ismastersim then
+	    -- Den Spieler vor Beginn einfrieren
+	    inst.components.health:SetInvincible(true)
+	    inst.components.hunger:Pause()
+	    local _speed = inst.components.locomotor.runspeed
+	    inst.components.locomotor.runspeed = 0
+	    table.insert(on_begin, function()
+	        inst.components.health:SetInvincible(false)
+	        inst.components.hunger:Resume()
+	        inst.components.locomotor.runspeed = _speed
+		end)
 
-	-- Verstecken ermöglichen
-	inst:AddComponent("hideaway")
-
-	if GLOBAL.TheWorld.ismastersim then
-	    -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
-	    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or DEBUG then
-	        DoTaskInTime(0, BeginGame)
-	    end
+		-- Verstecken ermöglichen
+		inst:AddComponent("hideaway")
 	end
+
+    -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
+    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or DEBUG then
+        DoTaskInTime(0, BeginGame)
+    end
 end)
 
 

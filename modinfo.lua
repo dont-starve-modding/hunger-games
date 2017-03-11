@@ -8,7 +8,7 @@ version = "1.0"
 version_compatible = "1.0"
 api_version = 10
 
-icon_atlas = "modicon.xml"
+icon_atlas = "images/modicon.xml"
 icon = "modicon.tex"
 
 standalone = true
