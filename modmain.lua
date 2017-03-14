@@ -6,6 +6,7 @@ local tonumber = GLOBAL.tonumber
 local TheNet = GLOBAL.TheNet
 local SpawnPrefab = GLOBAL.SpawnPrefab
 local function DoTaskInTime(time, task) GLOBAL.TheWorld:DoTaskInTime(time, task) end
+local maxplayers = TheNet:GetServerMaxPlayers()
 local ismastersim = TheNet:GetIsMasterSimulation()
 local hunger_games = GLOBAL.GAME_MODES["hunger_games"]
 
@@ -16,6 +17,7 @@ local DEBUG = true -- TODO
 
 --- Liste der neuen Gegenstände
 PrefabFiles = {
+	"cornucopia",
 	"platform"
 }
 
@@ -55,8 +57,12 @@ local function EndGame()
     TheNet:Announce("The game is over!")
 end
 
---- Positionen der Startplattformen
-local PlatformPosition = nil
+--- Positionen um das Füllhorn herum
+local RadialPosition = nil
+
+--- Abstände der Gegenstände vom Füllhorn
+local platform = 15
+local backpack = 7
 
 --- Listet für alle Startpositionen auf, ob sie von einem Spieler besetzt sind
 local platform_used = { }
@@ -67,21 +73,31 @@ local platform_used = { }
 --- Startumgebung mit Füllhorn
 AddPrefabPostInit("multiplayer_portal", function(inst)
 	DoTaskInTime(0, function()
+		inst:Hide()
+		-- Position des Füllhorns
 	    local x0, y, z0 = inst:GetPosition():Get()
-	    -- TODO Voraussetzung ist genügend freier Raum, i.A. aber nicht der Fall
+		SpawnPrefab("cornucopia").Transform:SetPosition(x0, y, z0)
 		-- Halbkreis vor dem Füllhorn
-		local r = 15
-		local delta = math.pi / TheNet:GetServerMaxPlayers()
-		PlatformPosition = function(i)
+		local delta = math.pi / maxplayers
+		RadialPosition = function(r, i)
 			local phi = i * delta
 			local x = x0 + r * math.sin(phi)
 			local z = z0 + r * math.cos(phi)
 			return x, y, z
 		end
-		for i = 1, TheNet:GetServerMaxPlayers() do
+	    -- TODO Voraussetzung ist genügend freier Raum, i.A. aber nicht der Fall
+		for i = 1, maxplayers do
 			platform_used[i] = false
-			local x, y, z = PlatformPosition(i)
+			local x, y, z = RadialPosition(platform, i)
 	    	SpawnPrefab("platform").Transform:SetPosition(x, y, z)
+			-- Rucksäcke für den Start
+			if i ~= maxplayers then
+				local x, y, z = RadialPosition(backpack, i+0.5)
+		    	local pack = SpawnPrefab("backpack")
+				pack.Transform:SetPosition(x, y, z)
+				-- TODO Zufällig befüllen
+				--pack.components.container.slots[0] =
+			end
 		end
 	end)
 end)
@@ -118,7 +134,7 @@ AddPlayerPostInit(function(inst)
 	end
 
     -- Das Spiel bei Erreichen der gewünschten Spieleranzahl beginnen
-    if #TheNet:GetClientTable() >= TheNet:GetServerMaxPlayers() or DEBUG then
+    if #TheNet:GetClientTable() >= maxplayers or DEBUG then
         DoTaskInTime(0, BeginGame)
     end
 end)
@@ -132,7 +148,7 @@ AddComponentPostInit("playerspawner", function(inst)
 			i = i + 1
 		end
 		platform_used[i] = true
-		local x, y, z = PlatformPosition(i)
+		local x, y, z = RadialPosition(platform, i)
 		self:SpawnAtLocation(inst, player, x, y, z)
 	end
 end)

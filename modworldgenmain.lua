@@ -58,6 +58,8 @@ if GLOBAL.getmetatable(GLOBAL).__declared["GAME_MODES"] then
 		--inst.pvp.spinner:SetSelected(true)
 	--end)
 
+	GLOBAL.Customise.GetGroupForOption("world_size")["world_size"]["value"] = "small"
+
 end
 
 
